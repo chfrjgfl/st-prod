@@ -1,11 +1,19 @@
-import React from 'react';  //, { useState }
+import React , { useEffect, useState } from 'react';  //, { useState }
 //import ReactDOM from 'react-dom/client';
 import './Graph.css';
 import { Chart } from "react-google-charts";
+                                                
+function Raw (props) {                          
+  function handleClick() {                      
+    setShowRolling(randomVal);   
+  }
 
-function Raw (props) {
-
-        const { statArr, worstArr, histPRArr, kalmanArr, meanArr } = props.data.data;  //, statInfo
+      const { statArr, worstArr, histPRArr, kalmanArr, meanArr, rollArr } = props.data.data;  //, statInfo
+        
+        const randomVal = worstArr[Math.floor(worstArr.length /2)];
+        const [showRolling, setShowRolling] = useState (randomVal+4);
+        
+   //     useEffect(()=>setShowRolling(false),[]);
         const indexes = props.data.options.indexes;
 //        const prodType = props.data.options.prodType;
         //const[y,m] = props.data.startDate.split('-')
@@ -18,6 +26,30 @@ function Raw (props) {
 
         const kalmanData = [["Date", "S&P", "Kalman", "Mean"]]
                 .concat(histPRArr[0].map((el, i) => [calcDate(startDate, i), el, kalmanArr[i], meanArr[i]]));
+
+
+        const rollingData = [];
+        rollingData.push(['Date']);
+        
+        for (let i=0; i<rollArr.length + rollArr[rollArr.length-1].length-1; i++) {
+          //let s = calcDate(startDate, i);
+          
+          if (i < rollArr.length) { rollingData[0].push(calcDateS(startDate, i));  }
+            let ar = [];
+            ar[0] = calcDate(startDate, i);            
+            ar[rollArr.length+1] = + props.data.options.principalBarrier;
+            ar.push(props.data.options.prodType ==='A'? +props.data.options.couponBarrier: 0);
+            rollingData.push(ar); 
+        //  }
+        }   
+
+        for (let i=0; i<rollArr.length; i++) {
+          for (let j=0; j<rollArr[i].length; j++) { rollingData[i+j+1][i+1] = rollArr[i][j]}
+        }
+        
+        rollingData[0].push('Principal Barrier', props.data.options.prodType ==='A'? 'Coupon Barrier': 'Zero'); 
+        
+
 
         const options = {
             chartArea: { height: "70%", width: "100%", left: "5%",
@@ -50,6 +82,7 @@ function Raw (props) {
               maxZoomIn: 3.5,},
             };
         
+
 
         return (
             
@@ -175,8 +208,89 @@ function Raw (props) {
       ]}
     />
 
+{ !(showRolling  === randomVal) && 
+ 
+  <button 
+      key = "bb"
+      style={{ position:"relative", top:"320px",  left: "auto" }}
+      onClick={handleClick}>
+        Click to see Rolling Time Periods data - due to massive calculations, this can take some time
+      </button> 
+     
+      }
 
+{(showRolling === randomVal) &&
 <Chart
+      chartType="LineChart"
+      key = "r3"
+      width="100%"
+      height="800px"
+      // style={{position:"relative", top:"320px", backgroundColor:"green"}}       //
+      data={ rollingData }
+      options={{...options,
+        title:"Rolling data",
+        vAxis: {
+          baseline: 0,
+          baselineColor: "black",
+        },
+        legend: {position: "none"},
+        curveType: "none",
+        crosshair: { trigger: 'none' },
+      }}
+      chartPackages={["corechart", "controls"]}
+
+      render={({ renderControl, renderChart }) => {            //width: "100%",height:"400px", top:"200px", backgroundColor:"pink"
+        return (
+          <div style={{ position:"relative", top:"320px", backgroundColor:"green" }}>
+            <div style={{  }}>{renderChart()}</div>
+            <div style={{ position:"relative",width: "100%", height:"50%", top:"0px" }}>{renderControl(() => true)}</div>
+            
+          </div>
+        );
+      }}
+
+      controls={[
+        {
+          controlType: "ChartRangeFilter",
+          position:"relative", top:"160px",
+          options: {
+            filterColumnIndex: 0,
+            //height:30,
+            ui: {
+              chartType: "LineChart",
+              chartOptions: {
+                //backgroundColor: "pink",
+
+                chartArea: {  height: "50%", 
+                
+                left: "10%", 
+                right: "10%", 
+
+                 },  //width: "81%",
+                 series: {
+                  3: {                    
+                    lineWidth: 0,
+                  }
+                },
+                hAxis: { baselineColor: "none" },
+              },
+            },
+          },
+          controlPosition: "bottom",
+          controlWrapperParams: {
+            state: {
+              range: {
+                start: new Date(1997, 1, 1),
+                end: new Date(2002, 2, 1),
+              },
+            },
+          },
+        },
+      ]}
+    />
+}
+
+      {/* <Chart
       chartType="LineChart"
       key = "r3"
       width="100%"
@@ -240,9 +354,7 @@ function Raw (props) {
           },
         },
       ]}
-    />
-
-      {/* </div>       */}
+    />       */}
             {/* </div>         */}
             
             </fieldset>
@@ -252,10 +364,21 @@ function Raw (props) {
 
 function calcDate(date, n) {
     let d = new Date(date);
-    //let m = d.getMonth();
+    
     d.setMonth(d.getMonth() + n);
     
     return d;
+}
+
+function calcDateS(date, n) {
+  let d = new Date(date);
+  
+  d.setMonth(d.getMonth() + n);
+  let m = d.getMonth() + 1;
+  if (m < 10) m = '0' + m;
+  let y = d.getFullYear();
+  
+  return y+'-'+m;
 }
 
 export default Raw;

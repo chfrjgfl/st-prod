@@ -95,12 +95,13 @@ function StatInfo (props) {
       key = "d1"
       chartType="PieChart"
        width = "400px"
-      height="auto"
+      height="400px"
       
       data={[["Prod", "Outperforms"]].concat(['StProd ', 'IndBlend ', 'Bond ']
             .map((el, ind) => ([el, statInfo[mode].find(el => el.fname === '% Outperforms').array[ind]])))}
       options={{
         title: "Outperforming Product",
+        chartArea:{left:20,top:20,width:'100%',height:'100%'},
         pieHole: 0.4,
         is3D: false,
         pieSliceTextStyle: {color: 'black', },
@@ -113,7 +114,7 @@ function StatInfo (props) {
       key="d2"
       chartType="BarChart"
        width = "400px"
-      height="auto"
+      height="400px"
       
       data={[["Prod", "% Negative", { role: "style" }]].concat(['StProd ', 'IndBlend ', 'Bond ']
             .map((el, ind) => ([el, statInfo[mode].find(el => el.fname === '% Negative').array[ind],
